@@ -12,9 +12,10 @@ if __name__ == '__main__':
 	matrix = []
 	for root, dirs, files in os.walk(images_dir):
 		for im_file in files:
-			im = Image.open(os.path.join(root, im_file)).convert('LA')
+			im = Image.open(os.path.join(root, im_file)).convert('L')
 			pixels = list(im.getdata())
 
 			matrix.append(pixels)
+        arres = np.array(matrix)
 
-	np.savetxt('data.csv', np.array(matrix))
+	np.savetxt('data.csv', arres)
