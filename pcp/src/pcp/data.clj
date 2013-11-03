@@ -4,7 +4,8 @@ the grayscale image"
   (:require [incanter.core :as incanter])
   (:use [clojure.java.io :as io])
   (:import [javax.imageio ImageIO]
-           [java.awt.image BufferedImage]))
+           [java.awt.image BufferedImage]
+	   [java.io FileOutputStream]))
 
 (defn bmp->pixels
   [bmp-data]
@@ -57,8 +58,9 @@ a csv file with grayscale values"
   (let [data (pixel-columns->matrix
               (directory->pixel-columns directory))]
     (println "Initiating save")
+    (flush)
     (incanter/save data csv)))
 
 (defn -main
   [& args]
-  (directory->csv (first args) (second args)))
+  (directory->csv (first args) (FileOutputStream. (second args))))
