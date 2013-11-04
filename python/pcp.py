@@ -26,47 +26,83 @@ def animate(csv_file, w, h):
 			canvas.create_image(w, h, image=tk_im)
 			canvas.update()
 
-def pcp(csv_file):
+def pcp(matrix):
 	def converged(M, L, S):
-		return True
+		return np.linalg.norm(M - L - S) <= (10 ** -7) * np.linalg.norm(M)
 
 	def thresh(A, t):
-		return np.asarray([np.sign(x) * max([abs(x) - t, 0]) for x in A])
 
-	with open(csv_file, 'r') as csv_file_handle:
-		matrix = np.loadtxt(csv_file_handle)
+		def thresh_element(x):
+			return np.sign(x) * max([abs(x) - t, 0])
 
-		S = np.zeros(matrix.shape)
-		Y = np.zeros(matrix.shape)
-		n1, n2 = matrix.shape
-		u = (n1 * n2) / (4 * np.max(np.sum(np.abs(matrix), axis=0)))
-		l = 1
+		f = np.vectorize(thresh_element)
+		return f(A)
 
-		while True:
-			U, d, V = np.linalg.svd(matrix - S - ((1/u) * Y))
-			import ipdb
-			ipdb.set_trace()
-			L_new = U * thresh(d, l * u) * V
-			S_new = S
-			Y_new = Y + u * (matrix - L_new - S_new)
+	S = np.zeros(matrix.shape)
+	Y = np.zeros(matrix.shape)
+	n1, n2 = matrix.shape
+	mu = (n1 * n2) / float(4 * np.max(np.sum(np.abs(matrix), axis=0)))
+	lbda = 1
 
-			if converged(matrix, L_new, S_new):
-				return L_new, S_new
+	while True:
+		U, evs, V = np.linalg.svd(matrix - S - ((1/mu) * Y))
+		L_new = U * thresh(evs, mu) * V
+		S_new = thresh(matrix - L_new + ((1/mu) * Y), mu * lbda)
+		Y_new = Y + mu * (matrix - L_new - S_new)
 
-			S = S_new
-			Y = Y_new
+		if converged(matrix, L_new, S_new):
+			return L_new, S_new
+
+		S = S_new
+		Y = Y_new
+
+def test_pcp():
+	def pcp_and_print(matrix):
+		print 'M:'
+		print matrix
+		L, S = pcp(matrix)
+
+		print 'L:'
+		print L
+
+		print 'S:'
+		print S
+
+	M = np.asarray([[10 for x in range(10)] for y in range(10)])
+	pcp_and_print(M)
+
+	N = np.zeros((10, 10))
+	np.fill_diagonal(N, 5)
+	pcp_and_print(N)
+	
+	O = M
+	np.fill_diagonal(O, 5)
+	pcp_and_print(O)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
-	parser.add_argument('csv_file', metavar = 'csv-file')
-	parser.add_argument('width', type = int)
-	parser.add_argument('height', type = int)
+	parser.add_argument('--csv-file', dest = 'csv_file')
+
+	parser.add_argument('--width', type = int, dest = 'width')
+	parser.add_argument('--height', type = int, dest = 'height')
 	parser.add_argument('--animate', '-a', dest = 'animate', action = 'store_true', default = False)
+
+	parser.add_argument('--test', '-t', dest = 'test', action = 'store_true', default = False)
 
 	parsed = parser.parse_args()
 
 	if parsed.animate:
 		animate(parsed.csv_file, parsed.width, parsed.height)
+
+	elif parsed.test:
+		test_pcp()
+
 	else:
-		pcp(parsed.csv_file)
+		M = np.loadtxt(parsed.csv_file)
+		L, S = pcp(M)
+		print 'L:'
+		print L
+
+		print 'S:'
+		print S
