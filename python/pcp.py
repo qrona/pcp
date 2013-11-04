@@ -3,6 +3,7 @@ PCP implementation.
 '''
 
 import argparse
+import numpy as np
 import Tkinter
 from PIL import Image, ImageTk
 
@@ -25,6 +26,35 @@ def animate(csv_file, w, h):
 			canvas.create_image(w, h, image=tk_im)
 			canvas.update()
 
+def pcp(csv_file):
+	def converged(M, L, S):
+		return True
+
+	def thresh(A, t):
+		return np.asarray([np.sign(x) * max([abs(x) - t, 0]) for x in A])
+
+	with open(csv_file, 'r') as csv_file_handle:
+		matrix = np.loadtxt(csv_file_handle)
+
+		S = np.zeros(matrix.shape)
+		Y = np.zeros(matrix.shape)
+		n1, n2 = matrix.shape
+		u = (n1 * n2) / (4 * np.max(np.sum(np.abs(matrix), axis=0)))
+		l = 1
+
+		while True:
+			U, d, V = np.linalg.svd(matrix - S - ((1/u) * Y))
+			import ipdb
+			ipdb.set_trace()
+			L_new = U * thresh(d, l * u) * V
+			S_new = S
+			Y_new = Y + u * (matrix - L_new - S_new)
+
+			if converged(matrix, L_new, S_new):
+				return L_new, S_new
+
+			S = S_new
+			Y = Y_new
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -38,3 +68,5 @@ if __name__ == '__main__':
 
 	if parsed.animate:
 		animate(parsed.csv_file, parsed.width, parsed.height)
+	else:
+		pcp(parsed.csv_file)
