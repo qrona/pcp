@@ -1,5 +1,7 @@
 '''
 PCP implementation.
+To run tests:
+python pcp.py --test
 '''
 
 import argparse
