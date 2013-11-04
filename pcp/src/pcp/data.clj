@@ -1,10 +1,13 @@
 (ns pcp.data
   "Dataset -> matrix conversion. Each column is
 the grayscale image"
-  (:require [incanter.core :as incanter])
+  (:require [incanter.core :as incanter]
+            [incanter.io :as incanter-io])
   (:use [clojure.java.io :as io])
   (:import [javax.imageio ImageIO]
+           [javax.swing JFrame JPanel]
            [java.awt.image BufferedImage]
+           [java.awt Color]
 	   [java.io FileOutputStream]))
 
 (defn bmp->pixels
@@ -60,6 +63,43 @@ a csv file with grayscale values"
     (println "Initiating save")
     (flush)
     (incanter/save data csv)))
+
+(defn load-csv
+  "We expect the CSV file to contain a bitmap
+image row-wise. User is expected to serve the
+image dimensions."
+  [a-csv-file]
+  (let [lines (-> a-csv-file
+                  clojure.java.io/reader
+                  line-seq)]
+    (incanter/matrix
+     (map
+      #(map
+        (fn [a-str] (java.lang.Double/parseDouble a-str))
+        (clojure.string/split % #"\s+"))
+      lines))))
+
+(defn show-img
+  [img w h]
+  (let [jframe  (JFrame. "Escalator")
+        display (proxy [JPanel] []
+                  (paintComponent
+                    [g]
+                    (.drawImage g img 0 0 nil)))]
+    (doto jframe
+      (.setResizable false)
+      (.add display)
+      (.pack)
+      (.setSize w h)
+      (.setVisible true))))
+
+(defn row->render
+  [grayscale-values w h]
+  (let [img (BufferedImage. w h BufferedImage/TYPE_USHORT_GRAY)]
+    (doseq [i (range w)
+            j (range h)]
+     (.setRGB img i j (nth grayscale-values (+ i (* j w)))))
+    img))
 
 (defn -main
   [& args]

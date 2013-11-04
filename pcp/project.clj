@@ -5,5 +5,5 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[incanter "1.4.1"]
                  [org.clojure/clojure "1.5.1"]]
-  :jvm-opts ["-Xmx7g"]
+  :jvm-opts ["-Xmx6g"]
   :main pcp.data)
